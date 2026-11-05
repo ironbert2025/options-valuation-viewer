@@ -100,7 +100,7 @@ Para un contrato y un momento T0, la gráfica muestra cómo evoluciona el contra
 
 - Si el contrato no aparece en un snapshot que sí existe (salió de la ventana de strikes), la línea se corta en ese tramo; no se interpola.
 - El tiempo transcurrido entre snapshots nunca corta la línea: si el contrato está en dos snapshots consecutivos, se unen aunque los separen 4, 60 o 181 segundos.
-- Eje horizontal fijo, de 09:30 a 16:00, en tiempo real (según la `Time` de cada snapshot, no su número de orden); la serie empieza en T0.
+- Eje horizontal fijo, de 09:30 a 16:00, en tiempo real (según la `Time` de cada snapshot, no su número de orden); la serie empieza en T0. El eje no se amplía ni se desplaza: sin zoom en la v1.
 - Si Ask(T0) es 0, la ganancia o pérdida en % no se calcula y se muestra como n/d.
 - En modo en vivo la gráfica se actualiza cuando llegan snapshots nuevos.
 
@@ -111,7 +111,7 @@ La v1 cumple diez requisitos, numerados para poder referirlos en las tareas y en
 1. **RF-01:** cargar un CSV de Calls o de Puts desde disco, leyendo las columnas por nombre (sin distinguir mayúsculas, en cualquier orden e ignorando columnas de más), y validar que estén las 12 esperadas; si falta alguna, el archivo está vacío o una fila tiene un valor no numérico, mostrar un error claro con la línea afectada.
 2. **RF-02:** agrupar las filas por `Time` en snapshots y descartar los que caen fuera de 09:30:00 a 16:00:00, ambos incluidos, comparando la hora tal como viene en el archivo.
 3. **RF-03:** listar los strikes que aparecen dentro del horario, ordenados de menor a mayor, y permitir elegir uno.
-4. **RF-04:** permitir elegir T0 entre los snapshots en los que el contrato elegido existe; si no existe en el T0 pedido, avisar y pedir otro T0 u otro contrato.
+4. **RF-04:** permitir elegir T0 entre todos los snapshots de la sesión; si el contrato elegido no existe en ese T0, avisar, no dibujar y pedir otro T0 u otro contrato.
 5. **RF-05:** dibujar Ask(t), Bid(t), la línea de Ask(T0) y la ganancia o pérdida en $ y en %, todo por 1 contrato (precio cotizado × 100), según la sección Gráfica 1.
 6. **RF-06:** cortar la línea solo en los snapshots donde el contrato no tiene datos, sin interpolar; el tiempo transcurrido entre snapshots nunca corta la línea, y el eje horizontal es de tiempo real.
 7. **RF-07:** al pasar el cursor sobre la gráfica, mostrar hora, Bid, Ask y ganancia o pérdida del snapshot más cercano en el eje horizontal.
@@ -128,7 +128,7 @@ La restricción central es no interferir con la app que escribe los CSV; el rest
 - **RNF-03, hora:** `Time` es la hora del reloj de la PC que graba y se asume en zona Eastern, igual que hace la otra app; se compara tal como viene, sin convertir ni usar zonas horarias. Si el archivo se grabó en una PC de otra zona, el filtro se desfasa (ver RF-10).
 - **RNF-04, tecnología:** C# con WinForms para la interfaz.
 - **RNF-05, arquitectura:** Clean Architecture; el parseo, la lectura en vivo y el cálculo viven en una librería sin interfaz, para poder añadir otro frontend (por ejemplo web) sin reescribirlos.
-- **RNF-06, gráficas:** una librería para WinForms que maneje series de algunos miles de puntos con actualización en vivo; ScottPlot y LiveCharts2 son candidatas y se decide en la fase de diseño.
+- **RNF-06, gráficas:** una librería para WinForms que maneje series de algunos miles de puntos con actualización en vivo; se usa ScottPlot 5 (decidido en la propuesta).
 - **RNF-07, rendimiento:** un archivo de un día (unas 17.000 filas) se carga y se grafica sin congelar la interfaz; la carga corre fuera del hilo de la interfaz.
 - **RNF-08, pruebas:** el núcleo se puede probar con los CSV de referencia sin abrir la interfaz.
 - **RNF-09, saltos de línea:** el parseo acepta CRLF y LF y no deja caracteres de retorno de carro pegados al último campo.
@@ -172,7 +172,7 @@ Hay 8 decisiones del trader, 4 supuestos que él ya confirmó, 3 preguntas cerra
 - La salida se valora al Bid (lo que se cobraría al vender), no al punto medio.
 - En modo en vivo, contrato y T0 también los elige el trader en la v1; la detección automática queda fuera.
 - Uso personal en una sola máquina, y la app lee los archivos directamente, sin pasar por una API del backend.
-- La validación de columnas (RF-01) y el detalle al pasar el cursor (RF-07) son propuestas que no se han pedido.
+- La validación de columnas (RF-01) y el detalle al pasar el cursor (RF-07) las propuso Claude y el trader las aceptó.
 
 **Preguntas cerradas**
 
