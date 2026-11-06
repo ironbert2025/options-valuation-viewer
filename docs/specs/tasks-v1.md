@@ -72,11 +72,11 @@ Sin verificar: cómo se comporta `dotnet test` con xUnit v3 en el SDK 10 (modo V
 - **Commit:** `Add smoke test and architecture guard tests`
 
 ### T-1.6 Spike: comprobar que NaN corta la línea
-- **Qué se hace:** crear `spikes/ScottPlotSpike` (proyecto desechable `net10.0-windows`, fuera de la solución) que dibuja un `Scatter` con un `double.NaN` en medio, genera la imagen sin mostrar ventana y comprueba que no hay píxeles de línea en la columna del `NaN`. Se registra el resultado.
-- **Cubre:** RF-06, RNF-06 (riesgo de la sección 6 del diseño).
-- **Prueba primero:** la propia comprobación del spike es la prueba: `Spike_NaN_CortaLaLinea` (desechable, se elimina en T-1.9). Si falla, la alternativa del diseño: partir la serie en segmentos de puntos consecutivos con dato y añadir una serie por segmento; se anota en `docs/specs/spike-scottplot.md`.
+- **Qué se hace:** crear `spikes/ScottPlotSpike` (proyecto desechable `net10.0-windows`, fuera de la solución) que dibuja un `Scatter` con un `double.NaN` en medio, genera la imagen sin mostrar ventana y comprueba que no hay píxeles de línea en la columna del `NaN`. Además, instancia un `FormsPlot` dentro de un `Form` real (se crea el handle del control y se fuerza un dibujo, p. ej. mostrando el formulario un instante o renderizándolo a un bitmap) y comprueba que se crea y se dibuja sin excepciones. Esto valida en tiempo de ejecución el `SkiaSharp.Views.WindowsForms` 3.119.0 (y OpenTK) que dispara el aviso NU1701 silenciado en `OptionsViewer.WinForms.csproj`. Se registra el resultado.
+- **Cubre:** RF-06, RNF-06 (riesgo de la sección 6 del diseño y compatibilidad en ejecución de las dependencias de ScottPlot.WinForms con NU1701).
+- **Prueba primero:** la propia comprobación del spike es la prueba: `Spike_NaN_CortaLaLinea` y `Spike_FormsPlot_SeCreaYSeDibujaEnUnFormReal` (desechables, se eliminan en T-1.9). Si `Spike_NaN_CortaLaLinea` falla, la alternativa del diseño: partir la serie en segmentos de puntos consecutivos con dato y añadir una serie por segmento; se anota en `docs/specs/spike-scottplot.md`. Si `Spike_FormsPlot_SeCreaYSeDibujaEnUnFormReal` falla (excepción al crear o dibujar el control), se registra en el mismo documento y **se detiene la ejecución y se consulta al usuario**; no se elige alternativa sin su decisión.
 - **Depende de:** T-1.4
-- **Hecho cuando:** el spike compila, la comprobación da resultado (pasa o falla) y el resultado y, si falla, la alternativa elegida quedan escritos en `docs/specs/spike-scottplot.md`.
+- **Hecho cuando:** el spike compila, las dos comprobaciones dan resultado (pasa o falla) y el resultado y, si fallan, la alternativa elegida (o la consulta pendiente al usuario, en el caso de `FormsPlot`) quedan escritos en `docs/specs/spike-scottplot.md`.
 - **Tamaño:** M
 - **Commit:** `Spike: verify ScottPlot NaN breaks the line`
 
