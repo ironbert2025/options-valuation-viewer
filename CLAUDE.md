@@ -16,3 +16,5 @@ App de escritorio C# (WinForms, `net10.0-windows`) que lee los CSV de opciones d
 - xUnit v3. Primero la prueba (rojo), luego el código (verde).
 - Nombres: `Metodo_Condicion_Resultado`. Cada prueba de un criterio lleva `[Trait("CA", "CA-xx")]` (y `[Trait("RF", "RF-xx")]` si aplica).
 - Comando: `dotnet test` en la raíz de la solución.
+- xUnit v3 corre sobre Microsoft.Testing.Platform (MTP). El SDK 10 exige activarlo en `global.json` (`"test": { "runner": "Microsoft.Testing.Platform" }`); sin ese bloque `dotnet test` falla con un error de VSTest.
+- Filtrar por criterio: `dotnet test --filter "CA=CA-09"` (equivale a `--filter-trait "CA=CA-09"`). Si ninguna prueba coincide, el código de salida es 8 y `dotnet test` se considera fallido.
