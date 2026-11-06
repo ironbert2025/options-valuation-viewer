@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!--
+      NU1701: ScottPlot.WinForms 5.1.59 arrastra OpenTK 3.1.0, OpenTK.GLControl 3.1.0 y
+      SkiaSharp.Views.WindowsForms 3.119.0, que solo traen assets de .NET Framework.
+      Se silencia solo en este proyecto; TreatWarningsAsErrors sigue activo en el resto.
+      El spike de T-1.6 valida en ejecución que FormsPlot funciona pese al aviso.
+    -->
+    <NoWarn>$(NoWarn);NU1701</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ScottPlot.WinForms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OptionsViewer.Core\OptionsViewer.Core.csproj" />
+    <ProjectReference Include="..\OptionsViewer.Infrastructure\OptionsViewer.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

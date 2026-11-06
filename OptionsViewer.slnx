@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/OptionsViewer.Core/OptionsViewer.Core.csproj" />
+    <Project Path="src/OptionsViewer.Infrastructure/OptionsViewer.Infrastructure.csproj" />
+    <Project Path="src/OptionsViewer.WinForms/OptionsViewer.WinForms.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OptionsViewer.Tests/OptionsViewer.Tests.csproj" />
+  </Folder>
+</Solution>
