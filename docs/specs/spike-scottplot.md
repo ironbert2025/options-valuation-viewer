@@ -8,7 +8,7 @@ Registro de las comprobaciones desechables sobre `ScottPlot.WinForms` 5.1.59 con
 | --- | --- | --- | --- |
 | `NaN` corta la línea | T-1.6 | **Pasa** | Se usa `double.NaN` para los huecos; no hace falta partir la serie en segmentos |
 | `FormsPlot` se crea y se dibuja en un `Form` real (valida NU1701 en ejecución) | T-1.6 | **Pasa** | `<NoWarn>NU1701</NoWarn>` en `OptionsViewer.WinForms.csproj` se mantiene |
-| Eje secundario | T-1.7 | pendiente | — |
+| Eje secundario | T-1.7 | **Pasa** | Se usa un eje Y derecho (`Plot.Axes.AddRightAxis()`) para el PnL %; no hace falta la disposición de tres paneles (D4, opción B) |
 | Eje X fijo de 09:30 a 16:00 sin zoom, y conversión píxel → coordenadas | T-1.8 | pendiente | — |
 
 ## T-1.6 — NaN corta la línea
@@ -50,6 +50,34 @@ Como control, el mismo trazado sin `NaN` debe dar línea en ese tramo, para que 
 **Conclusión:** `FormsPlot` se instancia dentro de un `Form` real y se dibuja a través del control (`SkiaSharp.Views.WindowsForms` 3.119.0) sin excepciones, pese al aviso NU1701. El aviso queda silenciado con fundamento.
 
 **Límites de la prueba:** el dibujo se comprobó con el contador de renders del control, no leyendo los píxeles de la ventana. La apariencia visual se verificará al construir la interfaz (T-6.3 y siguientes). No se probaron otros equipos ni otros escalados de pantalla.
+
+## T-1.7 — Eje secundario
+
+**Prueba:** `Spike_EjeSecundario_EscalaPropia` (desechable). Se dibujan dos series horizontales sin ventana:
+
+- serie roja en el eje izquierdo ("PnL $"), constante 15, límites −30..30;
+- serie azul en un eje derecho ("PnL %"), constante 2,5, límites −10..10, asignada con `scatter.Axes.YAxis = right`.
+
+Las dos escalas dan alturas distintas para el mismo valor, así que se comprueba en el PNG renderizado que cada serie está en la fila de píxeles que marca **su propio** eje y que la azul **no** está donde la dibujaría la escala del eje izquierdo.
+
+**Resultado:**
+
+| Medida | Valor |
+| --- | --- |
+| Fila esperada de la serie roja (eje izquierdo, 15) | 103,8 → línea roja encontrada: sí |
+| Fila esperada de la serie azul (eje derecho, 2,5) | 148,1 → línea azul encontrada: sí |
+| Fila de la azul si usara la escala izquierda | 177,7 → línea azul encontrada: **no** |
+| Límites de cada eje tras fijarlos | izquierdo −30..30; derecho −10..10 (se conservan) |
+
+**API real usada (ScottPlot 5.1.59):** `Plot.Axes.AddRightAxis()` (devuelve un `IYAxis`, concretamente `RightAxis`), `Scatter.Axes.YAxis = right`, `Plot.Axes.SetLimitsY(bottom, top, axis)`, `Plot.GetPixel(Coordinates, xAxis, yAxis)`, `right.LabelText` y `Plot.Axes.Left.Label.Text` (en `AxisBase`, `Label` está marcado obsoleto: usar `LabelText`).
+
+**Conclusión:** existe un eje secundario real con escala propia e independiente del izquierdo. Sirve para el PnL % de la interfaz (D4, opción A): el % es el PnL en $ reescalado (`× 100 / entrada`), así que sus límites se calculan a partir de los del eje izquierdo.
+
+**Límites de la prueba:**
+- Los límites de ambos ejes se fijaron a mano; no se probó el autoescalado ni cómo mantener sincronizados los dos ejes cuando cambian los datos. En la interfaz los límites del derecho se derivarán de los del izquierdo (`límite_$ × 100 / entrada`).
+- Se comprobó la posición de las series, no el aspecto de las marcas ni el rótulo del eje derecho.
+- Cómo se comportan los dos ejes con la interacción del usuario (zoom, desplazamiento) se trata en T-1.8.
+- Con `Ask(T0) = 0` el % no está disponible; ocultar el eje derecho en ese caso se resolverá en T-6.7.
 
 ## Notas técnicas
 
