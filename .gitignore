@@ -1,0 +1,14 @@
+# Build output
+bin/
+obj/
+
+# IDE and user files
+.vs/
+*.user
+*.suo
+
+# Test results
+TestResults/
+
+# Generated files (e.g. large synthetic CSV for manual checks)
+artifacts/
