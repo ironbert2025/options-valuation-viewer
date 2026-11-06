@@ -7,6 +7,8 @@
 - **Una tarea = un commit.** Los mensajes siguen el estilo del historial (inglés, imperativo, una línea). Al commitear se añade la línea de coautoría que corresponda.
 - **Prueba primero:** se escribe la prueba, se ve fallar (rojo) y luego se implementa hasta ponerla en verde. Nombres de prueba: `Metodo_Condicion_Resultado`. Cada prueba de un criterio lleva `[Trait("CA", "CA-xx")]` (y `[Trait("RF", "RF-xx")]` si aplica); T-5.3 usa esos rasgos para comprobar CA-11.
 - **Comando de verificación:** `dotnet test` en la raíz de la solución, salvo que la tarea diga otra cosa.
+- **Filtro por criterio con MTP:** con este runner, `dotnet test --filter "CA=CA-xx"` sin pruebas coincidentes sale con código 8 (fallo).
+  Por eso esas verificaciones solo valen cuando ya existan pruebas con ese rasgo.
 - **Tamaños:** S (menos de 30 min) o M (30 a 90 min). No hay tareas L.
 - **"Cubre"** indica lo que la tarea aporta; la tabla de trazabilidad del final dice qué tareas cierran cada requisito.
 
