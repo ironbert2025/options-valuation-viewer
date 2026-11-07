@@ -348,7 +348,7 @@ Las pruebas de esta etapa solo cubren la lógica pura que vive en Core; la venta
 - **Commit:** `Wire strike and T0 selection to series builder`
 
 ### T-6.6 Dibujar la gráfica de precio con eje fijo
-- **Qué se hace:** en el panel superior, dibujar Ask(t) y Bid(t) con los arreglos de `ChartSeriesData` y la línea horizontal en `EntryAskPerContract`; fijar el eje X de 09:30 a 16:00 con rótulos `HH:mm` y sin zoom, usando lo registrado en el spike (T-1.8); un refresco por cambio.
+- **Qué se hace:** en el panel superior, dibujar Ask(t) y Bid(t) con los arreglos de `ChartSeriesData` y la línea horizontal en `EntryAskPerContract`; fijar el eje X de 09:30 a 16:00 (`Plot.Axes.SetLimitsX(34200, 57600)`), con rótulos mediante `NumericManual` cada 30 minutos de 09:30 a 16:00 (14 rótulos `HH:mm`) y bloquear el zoom y el desplazamiento con `FormsPlot.UserInputProcessor.Disable()` (según `docs/specs/spike-scottplot.md`); un refresco por cambio.
 - **Cubre:** RF-05, RF-06, RNF-06, CA-05 (interfaz), CA-13 (eje).
 - **Prueba primero:** sin prueba automática: renderizado; los datos que recibe ya están probados en T-6.1. Se verifica en T-7.2.
 - **Depende de:** T-6.5, T-6.1, T-1.9
@@ -357,7 +357,7 @@ Las pruebas de esta etapa solo cubren la lógica pura que vive en Core; la venta
 - **Commit:** `Draw price chart with fixed time axis`
 
 ### T-6.7 Dibujar la gráfica de PnL en $ y en %
-- **Qué se hace:** en el panel inferior, dibujar el PnL en $ y el PnL en % con el mecanismo decidido en T-1.7 (eje derecho, o tres paneles si el spike falló); con `PercentAvailable` falso, ocultar el % y mostrar "n/d".
+- **Qué se hace:** en el panel inferior, dibujar el PnL en $ y el PnL en % con un eje derecho (`Plot.Axes.AddRightAxis()`), cuyos límites se derivan de los del eje izquierdo (`límite_$ × 100 / entrada`); con `PercentAvailable` falso, ocultar el % y mostrar "n/d".
 - **Cubre:** RF-05, D4, regla n/d.
 - **Prueba primero:** sin prueba automática: renderizado; la conversión está probada en T-6.1 y T-4.6.
 - **Depende de:** T-6.6
@@ -366,7 +366,7 @@ Las pruebas de esta etapa solo cubren la lógica pura que vive en Core; la venta
 - **Commit:** `Draw PnL chart in dollars and percent`
 
 ### T-6.8 Mostrar el tooltip al pasar el cursor
-- **Qué se hace:** escuchar el movimiento del ratón en cada gráfica, convertir el píxel a coordenada X, usar `SeriesLookup.FindNearestIndex` y mostrar hora, Bid, Ask, PnL $ y PnL % (o "n/d"); sobre un hueco muestra "hora — sin dato" (D8). Marcar el punto y refrescar solo cuando cambia el punto más cercano.
+- **Qué se hace:** suscribirse a `FormsPlot.MouseMove` de cada gráfica, convertir el píxel a X con `Plot.GetCoordinates(Pixel)` (API confirmada en el spike), usar `SeriesLookup.FindNearestIndex` y mostrar hora, Bid, Ask, PnL $ y PnL % (o "n/d"); sobre un hueco muestra "hora — sin dato" (D8). Marcar el punto y refrescar solo cuando cambia el punto más cercano.
 - **Cubre:** RF-07, D8.
 - **Prueba primero:** sin prueba automática: eventos del ratón; la búsqueda del punto está probada en T-6.2.
 - **Depende de:** T-6.7, T-6.2
@@ -402,11 +402,11 @@ Las pruebas de esta etapa solo cubren la lógica pura que vive en Core; la venta
 - **Commit:** `Add CA-10 manual verification and large CSV generator`
 
 ### T-7.2 Verificar manualmente lo que depende de la ventana
-- **Qué se hace:** completar `docs/specs/verification-v1.md` con un guion de verificación de la interfaz: (1) la ventana abre con todos los controles; (2) CA-02: un CSV sin una columna muestra el error con la línea y no dibuja; (3) CA-06: elegir un T0 sin el contrato muestra el aviso y no dibuja; (4) CA-12: un CSV con horas 08:00 a 08:59 muestra el aviso de zona horaria; (5) CA-04 y RF-07: Calls 340 a las 09:30:00 y tooltip; (6) CA-05: Calls 337,5 desde 09:44:49 con la línea cortada; (7) RF-09: cambiar contrato, T0 y archivo sin reiniciar; (8) eje fijo sin zoom.
+- **Qué se hace:** completar `docs/specs/verification-v1.md` con un guion de verificación de la interfaz: (1) la ventana abre con todos los controles; (2) CA-02: un CSV sin una columna muestra el error con la línea y no dibuja; (3) CA-06: elegir un T0 sin el contrato muestra el aviso y no dibuja; (4) CA-12: un CSV con horas 08:00 a 08:59 muestra el aviso de zona horaria; (5) CA-04 y RF-07: Calls 340 a las 09:30:00 y tooltip; (6) CA-05: Calls 337,5 desde 09:44:49 con la línea cortada; (7) RF-09: cambiar contrato, T0 y archivo sin reiniciar; (8) eje fijo sin zoom; (9) con el escalado de pantalla de Windows al 125 % y al 150 %, la gráfica, el tooltip y el eje siguen correctos; (10) el clic derecho y el teclado no alteran el eje.
 - **Cubre:** CA-02, CA-06, CA-12 (interfaz), RF-05, RF-07, RF-09, RF-10.
 - **Prueba primero:** sin prueba automática: verificación de interfaz.
 - **Depende de:** T-7.1
-- **Hecho cuando:** los 8 pasos del guion están marcados como correctos, con fecha, en `docs/specs/verification-v1.md`.
+- **Hecho cuando:** los 10 pasos del guion están marcados como correctos, con fecha, en `docs/specs/verification-v1.md`.
 - **Tamaño:** M
 - **Commit:** `Record manual UI verification for v1.0`
 
