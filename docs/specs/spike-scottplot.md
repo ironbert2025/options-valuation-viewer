@@ -1,6 +1,8 @@
 # Spike de ScottPlot (T-1.6 a T-1.9)
 
-Registro de las comprobaciones desechables sobre `ScottPlot.WinForms` 5.1.59 con `net10.0-windows`. El proyecto del spike vive en `spikes/ScottPlotSpike` (fuera de la solución) y se elimina en T-1.9; este documento se conserva.
+Registro de las comprobaciones sobre `ScottPlot.WinForms` 5.1.59 con `net10.0-windows`, hechas con un proyecto desechable (`spikes/ScottPlotSpike`, fuera de la solución). Ese proyecto se eliminó en T-1.9 y este documento es lo que se conserva. El código del spike sigue en el historial de git: commits `789b1d5` (NaN y `FormsPlot`), `6d5287e` (eje secundario) y `48c3111` (eje fijo sin zoom).
+
+Las pruebas del spike (`Spike_NaN_CortaLaLinea`, `Spike_FormsPlot_SeCreaYSeDibujaEnUnFormReal`, `Spike_EjeSecundario_EscalaPropia` y `Spike_EjeX_FijoSinZoom`) pasaron todas. Ninguna comprobación falló, así que no se usó ninguna alternativa del diseño.
 
 ## Resumen
 
@@ -10,6 +12,45 @@ Registro de las comprobaciones desechables sobre `ScottPlot.WinForms` 5.1.59 con
 | `FormsPlot` se crea y se dibuja en un `Form` real (valida NU1701 en ejecución) | T-1.6 | **Pasa** | `<NoWarn>NU1701</NoWarn>` en `OptionsViewer.WinForms.csproj` se mantiene |
 | Eje secundario | T-1.7 | **Pasa** | Se usa un eje Y derecho (`Plot.Axes.AddRightAxis()`) para el PnL %; no hace falta la disposición de tres paneles (D4, opción B) |
 | Eje X fijo de 09:30 a 16:00 sin zoom, y conversión píxel → coordenadas | T-1.8 | **Pasa** | Se bloquea con `FormsPlot.UserInputProcessor.Disable()`; no hace falta la alternativa de ignorar los eventos del ratón |
+
+## Decisiones para la etapa 6
+
+| Tema | Decisión | Tarea |
+| --- | --- | --- |
+| Huecos | `double.NaN` en la serie; un `Scatter` con `NaN` corta la línea, sin dividir la serie en segmentos | T-6.1, T-6.6 |
+| Eje X | Segundos desde medianoche, límites fijos 34.200 a 57.600 (`Plot.Axes.SetLimitsX`) | T-6.6 |
+| Rótulos del eje X | `NumericManual` con rótulos `HH:mm` cada 30 minutos, de 09:30 a 16:00 (14 rótulos) | T-6.6 |
+| Zoom y desplazamiento | `FormsPlot.UserInputProcessor.Disable()` | T-6.6 |
+| PnL en % | Eje derecho (`Plot.Axes.AddRightAxis()`); límites del derecho derivados de los del izquierdo (`límite_$ × 100 / entrada`) | T-6.7 |
+| Tooltip | Suscribirse a `FormsPlot.MouseMove` y convertir píxel a X con `Plot.GetCoordinates(Pixel)` | T-6.8 |
+| NU1701 | Se mantiene `<NoWarn>NU1701</NoWarn>` solo en `OptionsViewer.WinForms.csproj` | T-1.4 (ya aplicado) |
+
+## Hallazgos
+
+- Un `NaN` aislado corta la línea de un `Scatter` en ambos lados y no se interpola (88 columnas con línea en el tramo con datos, 0 en el del `NaN`, 89 en el control sin `NaN`).
+- `FormsPlot` se crea y se dibuja en un `Form` real pese al aviso NU1701 de sus dependencias (`OpenTK` 3.1.0, `OpenTK.GLControl` 3.1.0, `SkiaSharp.Views.WindowsForms` 3.119.0); `RenderCount` pasó de 2 a 3 tras `Refresh()`.
+- `Plot.Axes.AddRightAxis()` da un eje con escala propia: cada serie queda en la fila de píxeles que marca su eje (103,8 y 148,1) y no en la de la escala ajena (177,7).
+- `UserInputProcessor.Disable()` bloquea el zoom y el desplazamiento del ratón: con la interacción activa la rueda y el arrastre simulados cambian los límites; con ella desactivada, tras 15 ruedas, 4 arrastres, un clic central y un doble clic, los límites siguen en X 34.200..57.600 e Y 0..10.
+- La conversión píxel → X es exacta al píxel (≈ 31,8 s): extremos 34.200,0 y 57.600,0, centro 45.900,0 (12:45:00) y 1/4 40.050,0 (11:07:30).
+- Con `NumericAutomatic` los rótulos `HH:mm` caen en horas poco redondas (`10:00 10:33 11:06 ...`) y no incluyen 09:30 ni 16:00; con `NumericManual` cada 30 minutos salen `09:30 ... 16:00`.
+- `FormsPlot` aloja un control hijo (`TransparentSKControl`, propiedad `SKControl`) que recibe el ratón; el `FormsPlot` externo recibe también sus eventos `MouseMove` (73 de 73 disparados sobre el hijo). Los eventos simulados sobre el externo no llegan a ScottPlot.
+- En `AxisBase`, `Label` está marcado obsoleto: usar `LabelText`. Con `UseWindowsForms` hay que calificar `System.Drawing.Color` y `ScottPlot.ImageFormat`.
+
+## Límites de las pruebas (consolidados)
+
+Lo que el spike **no** comprobó, con la tarea que lo cubre:
+
+| No comprobado | Se cubre en |
+| --- | --- |
+| Varios `NaN` consecutivos (el hueco real de CA-05 son 9 puntos), `NaN` al inicio o al final, marcadores | T-6.6 y verificación manual de CA-05 en T-7.2 |
+| Aspecto visual del control (el dibujo se comprobó con `RenderCount`, no leyendo píxeles de la ventana) | T-7.2 |
+| Autoescalado del eje Y y sincronización de los dos ejes Y cuando cambian los datos (límites fijados a mano) | T-6.6, T-6.7 |
+| Aspecto de las marcas y del rótulo del eje derecho; ocultar el eje derecho cuando `Ask(T0) = 0` | T-6.7 |
+| Entrada real del sistema operativo (los eventos se simularon por reflexión sobre el control hijo, misma ruta de código que los reales) | T-7.2 |
+| Teclado, menú contextual del clic derecho (`FormsPlot.Menu`) y redimensionado de la ventana | T-7.2 |
+| Escalado de pantalla distinto de 100 % (`DisplayScale` fue 1); puede hacer falta usar `FormsPlot.DisplayScale` en la conversión del tooltip (sin verificar) | T-7.2 |
+| Que `Disable()` bloquee el zoom con los dos ejes Y a la vez | T-6.7 y T-7.2 |
+| Otros equipos y otras versiones de Windows | no cubierto |
 
 ## T-1.6 — NaN corta la línea
 
@@ -125,6 +166,6 @@ Las dos escalas dan alturas distintas para el mismo valor, así que se comprueba
 
 ## Notas técnicas
 
-- **Resultados del spike:** `dotnet test` con Microsoft.Testing.Platform no muestra la salida de consola; las mediciones se escribieron en un archivo (`spike-output.txt`) junto al ejecutable.
+- **Resultados del spike:** `dotnet test` con Microsoft.Testing.Platform no muestra la salida de consola; las mediciones se escribieron en un archivo (`spike-output.txt`) junto al ejecutable. Ese archivo se eliminó junto con `spikes/`; las cifras de este documento son las medidas.
 - **API de ScottPlot 5.1.59 usada y confirmada:** `Plot.Add.Scatter(double[], double[])`, `Scatter.Color`, `Scatter.LineWidth`, `Scatter.MarkerSize`, `Plot.Axes.SetLimits(left, right, bottom, top)`, `Plot.GetImageBytes(int, int, ScottPlot.ImageFormat)`, `Plot.GetPixel(Coordinates)`, `FormsPlot` (`ScottPlot.WinForms`), `FormsPlot.Refresh()` y `Plot.RenderManager.RenderCount`.
 - **Ambigüedades de nombres:** en un proyecto con `UseWindowsForms` hay que calificar `System.Drawing.Color` y `ScottPlot.ImageFormat`, porque colisionan con `ScottPlot.Color` y `System.Drawing.Imaging.ImageFormat`.
