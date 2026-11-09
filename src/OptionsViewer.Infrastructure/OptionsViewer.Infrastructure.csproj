@@ -4,6 +4,11 @@
     <TargetFramework>net10.0</TargetFramework>
   </PropertyGroup>
 
+  <!-- Las pruebas ejercitan directamente los tipos internos del lector -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="OptionsViewer.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\OptionsViewer.Core\OptionsViewer.Core.csproj" />
   </ItemGroup>
