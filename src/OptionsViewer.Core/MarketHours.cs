@@ -13,4 +13,18 @@ public static class MarketHours
     /// viene en el archivo, sin conversión de zona (RNF-03).
     /// </summary>
     public static bool IsInSession(TimeOnly t) => Open <= t && t <= Close;
+
+    /// <summary>
+    /// Conserva los snapshots dentro de horario (RF-02) y cuenta los descartados. Si no queda ninguno,
+    /// <see cref="TradingSession.NoSnapshotsInWindow"/> es true: es un aviso (RF-10), no un error.
+    /// </summary>
+    public static TradingSession Apply(SnapshotSet set)
+    {
+        var kept = set.Snapshots.Where(s => IsInSession(s.Time)).ToList();
+        return new TradingSession(
+            set.Type,
+            kept,
+            DiscardedCount: set.Snapshots.Count - kept.Count,
+            NoSnapshotsInWindow: kept.Count == 0);
+    }
 }
