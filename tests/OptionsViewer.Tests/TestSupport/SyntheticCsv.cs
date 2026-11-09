@@ -33,6 +33,38 @@ public sealed class SyntheticCsv
         return this;
     }
 
+    /// <summary>
+    /// CSV sintético con un snapshot por cada hora de <paramref name="times"/> (cadencia libre, p. ej. de
+    /// <see cref="CadenceSegment"/>). Cada snapshot trae el strike 340,0 (siempre presente) y el 342,5, que falta en
+    /// las horas de <paramref name="withoutSecondStrike"/> para definir huecos. Bid y Ask varían con la hora
+    /// (Bid = Ask − 0,10, siempre positivo).
+    /// </summary>
+    public static SyntheticCsv FromTimes(IEnumerable<TimeOnly> times, IReadOnlySet<TimeOnly>? withoutSecondStrike = null)
+    {
+        var csv = new SyntheticCsv();
+        foreach (var time in times)
+        {
+            int seconds = (int)time.ToTimeSpan().TotalSeconds;
+            decimal ask = 3.00m + (seconds % 7) * 0.05m;
+            decimal bid = ask - 0.10m;
+
+            csv.AddRow(QuoteRow(time, "340.0", bid, ask));
+            if (withoutSecondStrike is null || !withoutSecondStrike.Contains(time))
+                csv.AddRow(QuoteRow(time, "342.5", bid, ask));
+        }
+        return csv;
+    }
+
+    private static string[] QuoteRow(TimeOnly time, string strike, decimal bid, decimal ask)
+    {
+        var inv = System.Globalization.CultureInfo.InvariantCulture;
+        return
+        [
+            time.ToString("HH:mm:ss", inv), "341.53", strike, bid.ToString("0.00", inv), ask.ToString("0.00", inv),
+            "1.53", "1.47", "0.625", "0.193", "-0.325", "0.028", "42.582",
+        ];
+    }
+
     public string Build()
     {
         var sb = new StringBuilder();
