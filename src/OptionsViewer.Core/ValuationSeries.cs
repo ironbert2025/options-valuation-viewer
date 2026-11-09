@@ -42,10 +42,14 @@ public static class ValuationSeries
         for (int i = startIndex; i < snapshots.Count; i++)
         {
             var snapshot = snapshots[i];
-            if (!snapshot.QuotesByStrike.TryGetValue(key.Strike, out var quote))
-                continue;   // los huecos (contrato ausente de un snapshot) se emiten en T-4.5
 
-            points.Add(new SeriesPoint(snapshot.Time, PriceAt(quote, entryAskPerContract)));
+            // Hueco: el contrato falta en un snapshot que sí existe. Se emite un punto con Value = null (no se omite
+            // ni se interpola). Solo cuenta la ausencia del contrato; el tiempo entre snapshots nunca corta la línea (RNF-10).
+            PricePoint? value = snapshot.QuotesByStrike.TryGetValue(key.Strike, out var quote)
+                ? PriceAt(quote, entryAskPerContract)
+                : null;
+
+            points.Add(new SeriesPoint(snapshot.Time, value));
         }
 
         // PercentAvailable fijo en true hasta T-4.6 (caso Ask(T0) = 0)
