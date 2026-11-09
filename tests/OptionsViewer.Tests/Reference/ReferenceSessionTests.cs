@@ -1,22 +1,15 @@
 using OptionsViewer.Core;
-using OptionsViewer.Infrastructure;
 
 namespace OptionsViewer.Tests;
 
 /// <summary>
 /// Integración Infrastructure + Core con los CSV reales de samples/ (04-nov-2026):
-/// cargar con <see cref="CsvFileSnapshotSource"/> y filtrar con <see cref="MarketHours.Apply"/>.
+/// el archivo cargado con <see cref="OptionsViewer.Infrastructure.CsvFileSnapshotSource"/> y filtrado con
+/// <see cref="MarketHours.Apply"/> (cargados una sola vez, ver <see cref="ReferenceData"/>).
 /// </summary>
 public class ReferenceSessionTests
 {
     private static readonly TimeOnly[] ExpectedDiscarded = [new(8, 24, 27), new(18, 24, 35)];
-
-    private static (SnapshotSet Loaded, TradingSession Session) LoadAndFilter(string path, OptionType type)
-    {
-        var result = new CsvFileSnapshotSource(path, type).Load(TestContext.Current.CancellationToken);
-        Assert.True(result.IsSuccess, result.Error?.Message);
-        return (result.Value!, MarketHours.Apply(result.Value!));
-    }
 
     private static void AssertCa01(SnapshotSet loaded, TradingSession session)
     {
@@ -43,10 +36,8 @@ public class ReferenceSessionTests
     [Trait("RNF", "RNF-08")]
     public void Referencia_Calls_1613DentroYDescarta2()
     {
-        var (loaded, session) = LoadAndFilter(SamplePaths.Calls, OptionType.Call);
-
-        Assert.Equal(OptionType.Call, session.Type);
-        AssertCa01(loaded, session);
+        Assert.Equal(OptionType.Call, ReferenceData.CallsSession.Type);
+        AssertCa01(ReferenceData.CallsSet, ReferenceData.CallsSession);
     }
 
     [Fact]
@@ -55,9 +46,7 @@ public class ReferenceSessionTests
     [Trait("RNF", "RNF-08")]
     public void Referencia_Puts_1613DentroYDescarta2()
     {
-        var (loaded, session) = LoadAndFilter(SamplePaths.Puts, OptionType.Put);
-
-        Assert.Equal(OptionType.Put, session.Type);
-        AssertCa01(loaded, session);
+        Assert.Equal(OptionType.Put, ReferenceData.PutsSession.Type);
+        AssertCa01(ReferenceData.PutsSet, ReferenceData.PutsSession);
     }
 }
