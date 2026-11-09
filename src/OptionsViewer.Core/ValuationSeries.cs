@@ -52,8 +52,9 @@ public static class ValuationSeries
             points.Add(new SeriesPoint(snapshot.Time, value));
         }
 
-        // PercentAvailable fijo en true hasta T-4.6 (caso Ask(T0) = 0)
-        return new SeriesResult(new ContractSeries(key, t0, entryAskPerContract, PercentAvailable: true, points), null);
+        // Con Ask(T0) = 0 el % es n/d en toda la serie (PercentAvailable = false y todos los PnlPercent nulos)
+        bool percentAvailable = entryAskPerContract != 0m;
+        return new SeriesResult(new ContractSeries(key, t0, entryAskPerContract, percentAvailable, points), null);
     }
 
     private static PricePoint PriceAt(ContractQuote quote, decimal entryAskPerContract)
@@ -61,7 +62,9 @@ public static class ValuationSeries
         decimal askPerContract = quote.Ask * 100m;
         decimal bidPerContract = quote.Bid * 100m;
         decimal pnlDollars = bidPerContract - entryAskPerContract;
-        decimal pnlPercent = pnlDollars / entryAskPerContract * 100m;   // sin redondeo; el redondeo es solo al mostrar
+
+        // Sin redondeo (el redondeo es solo al mostrar). Si Ask(T0) = 0 el % no se calcula: null ⇒ n/d
+        decimal? pnlPercent = entryAskPerContract == 0m ? null : pnlDollars / entryAskPerContract * 100m;
         return new PricePoint(askPerContract, bidPerContract, pnlDollars, pnlPercent);
     }
 
